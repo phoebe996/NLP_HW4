@@ -88,7 +88,6 @@ class BerkeleyAligner():
             t_ef[None][fr_word]=1.0/len(fr_vocab)
 
         for i in range(0, num_iters):
-            print "iterations: " +  str(i)
             count_ef = defaultdict(lambda: defaultdict(lambda: 0.0))
             count_fe = defaultdict(lambda: defaultdict(lambda: 0.0))
             total_f = defaultdict(float)
@@ -156,29 +155,33 @@ class BerkeleyAligner():
                 for e in en_vocab:
                     t_ef[e][f] = (count_fe[f][e]+count_ef[e][f]) / (total_e[e]+total_f[f])
                     t_fe[f][e] = t_ef[e][f]
-
+                   
             for alignSent in aligned_sents:
-                en_set = alignSent.mots
-                fr_set =  alignSent.words
-                l_f = len(fr_set) 
-                l_e = len(en_set) 
-                for i in range(0, l_f+1):
-                    for j in range(0, l_e+1):
-                        if ((total_align_ef[i][l_e][l_f]+total_align_fe[j][l_f][l_e]))==0:
-                            q_fe[i][j][l_f][l_e] = q_ef[j][i][l_e][l_f]=0
+                en_set = [None]+alignSent.mots
+                fr_set =  [None] + alignSent.words
+                l_f = len(fr_set)-1
+                l_e = len(en_set)-1
+                for k in range(1, l_f+1):
+                    for j in range(1, l_e+1):
+                        if ((total_align_ef[k][l_e][l_f]+total_align_fe[j][l_f][l_e]))==0:
+                            q_fe[k][j][l_f][l_e] = q_ef[j][k][l_e][l_f]=0
                         else:
-                            q_ef[j][i][l_e][l_f] = (count_align_ef[j][i][l_e][l_f]+count_align_fe[i][j][l_f][l_e]) / (total_align_ef[i][l_e][l_f]+total_align_fe[j][l_f][l_e])
-                            q_fe[i][j][l_f][l_e] = q_ef[j][i][l_e][l_f]
-        
+                            q_ef[j][k][l_e][l_f] = (count_align_ef[j][k][l_e][l_f]+count_align_fe[k][j][l_f][l_e]) / (total_align_ef[k][l_e][l_f]+total_align_fe[j][l_f][l_e])
+                            q_fe[k][j][l_f][l_e] = q_ef[j][k][l_e][l_f]
 
-        return (t_ef,q_ef)
+                for j in range(1, l_e+1):
+                    q_fe[0][j][l_f][l_e] = count_align_fe[0][j][l_f][l_e]/total_align_fe[j][l_f][l_e]
+                for k in range(1, l_f+1):
+                    q_ef[0][k][l_e][l_f] = count_align_ef[0][k][l_e][l_f]/total_align_ef[k][l_e][l_f]
+               
+        t = t_ef
+        q = q_ef
+        return (t,q)
 
 def main(aligned_sents):
     ba = BerkeleyAligner(aligned_sents, 10)
-    
     A.save_model_output(aligned_sents, ba, "ba.txt")
     avg_aer = A.compute_avg_aer(aligned_sents, ba, 50)
-
     print ('Berkeley Aligner')
     print ('---------------------------')
     print('Average AER: {0:.3f}\n'.format(avg_aer))

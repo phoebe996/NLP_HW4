@@ -33,7 +33,6 @@ def save_model_output(aligned_sents, model, file_name):
         sample_sent_result = model.align(sample_sent)
         output_file.write(str(sample_sent_result.words) + "\n")
         output_file.write(str(sample_sent_result.mots) + "\n")
-        output_file.write("error: " + str(sample_sent_result.alignment_error_rate(sample_sent)))
         output_file.write(str(sample_sent_result.alignment) + "\n\n")
     output_file.close()
 
